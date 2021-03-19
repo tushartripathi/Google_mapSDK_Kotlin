@@ -1,22 +1,25 @@
 package com.example.googlemapsdemo
 
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.shapes.Shape
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.lifecycle.lifecycleScope
-import com.example.googlemapsdemo.misc.CameraAndViewport
-import com.example.googlemapsdemo.misc.CustomInfoAdapter
-import com.example.googlemapsdemo.misc.Shapes
-import com.example.googlemapsdemo.misc.TypeAndStyle
+import com.example.googlemapsdemo.misc.*
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -26,6 +29,7 @@ import com.google.android.gms.maps.model.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.lang.Exception
+import java.util.jar.Manifest
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 
@@ -34,7 +38,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
     private val typeAndStyle by lazy {
         TypeAndStyle()
     }
-
+    private  val overlays by lazy { Overlays() }
     private val shapes by lazy { Shapes() }
     val sydney = LatLng(30.32004591189383, 78.0349846851728)
     val mussorie = LatLng(52.47176493046111, 10.47564898906995)
@@ -104,14 +108,18 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
             //isCompassEnabled = true            //  |
         }
 
+        requestingPermissions()
+
         // this will create a custom marker
         // map.setInfoWindowAdapter(CustomInfoAdapter(this))        // | THis class create a block with message
         //map.setPadding(0,0,100,100)                               // | when you click on the marker
 
         typeAndStyle.setMapStyle(map,this)
 
-        shapes.addPolygon(map)
+        //overlays.addGroundOverlay(map)            // | Add image to map with fixed size
 
+        //shapes.addPolygon(map)            // | draw rectange with the coordinates
+        //shapes.addCircle(map)             // | draw a circle with center and radiud
 
 //lifecycleScope.launch {                   // | For drwaing line betweeen to
 //  var shape = Shapes()                    // | two lat,log points
@@ -192,8 +200,39 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback{
 //        return BitmapDescriptorFactory.fromBitmap(bitmap)
 //    }
 
+    @RequiresApi(Build.VERSION_CODES.M)
+    private  fun checkLocationPermission()
+    {
+        if(ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED)
+        {
+            map.isMyLocationEnabled =true
+            Toast.makeText(this, "allready enable ", Toast.LENGTH_SHORT).show()
+        }
+        else
+        {
+            requestingPermissions()
+        }
+    }
 
+    private fun requestingPermissions()
+    {
+        ActivityCompat.requestPermissions(
+                this,
+                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                1
+        )
+    }
 
+    @SuppressLint("MissingPermission")
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
+        if(requestCode == 1  && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+        {
+            map.isMyLocationEnabled =true
+            Toast.makeText(this,"Permisson granted ", Toast.LENGTH_SHORT).show()
+        }
+    }
 
 }
